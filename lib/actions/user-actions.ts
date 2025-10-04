@@ -1,0 +1,47 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+"use server";
+
+import { connectToDb } from "@/db/mongoose";
+
+export const getAllUsersForNewsEmail = async () => {
+  try {
+    const mongoose = await connectToDb();
+    const db = mongoose.connection.db;
+
+    if (!db) {
+      throw new Error("Mongoose connection not connected");
+    }
+
+    const users = await db
+      .collection("user")
+      .find(
+        {
+          email: {
+            $exists: true,
+            $ne: null,
+          },
+        },
+        {
+          projection: {
+            _id: 1,
+            id: 1,
+            email: 1,
+            name: 1,
+            country: 1,
+          },
+        }
+      )
+      .toArray();
+
+    const mappedUsers = users.map((user: any) => ({
+      id: user.id || user._id?.toString() || "",
+      email: user.email,
+      name: user.name,
+    }));
+
+    return mappedUsers;
+  } catch (error) {
+    console.log(error, "Error fetching users for news email");
+    return [];
+  }
+};
