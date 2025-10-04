@@ -106,7 +106,7 @@ const SearchCommand = ({
                 {` `} ({displayStocks?.length || 0})
               </div>
 
-              {displayStocks.map((stock, i) => (
+              {displayStocks.map((stock) => (
                 <li key={stock.symbol} className="search-item">
                   <Link
                     href={`/stocks/${stock.symbol}`}
