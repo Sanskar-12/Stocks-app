@@ -4,14 +4,14 @@ import { useState, useEffect } from "react";
 import {
   CommandDialog,
   CommandEmpty,
-  CommandGroup,
   CommandInput,
-  CommandItem,
   CommandList,
 } from "@/components/ui/command";
 import { Button } from "../ui/button";
 import { Loader2, TrendingUp } from "lucide-react";
 import Link from "next/link";
+import { searchStocks } from "@/lib/actions/finnhub-actions";
+import useDebounce from "@/hooks/useDebounce";
 
 const SearchCommand = ({
   renderAs = "button",
@@ -21,10 +21,32 @@ const SearchCommand = ({
   const [open, setOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(false);
-  const [stocks, setStocks] = useState(initialStocks);
+  const [stocks, setStocks] =
+    useState<StockWithWatchlistStatus[]>(initialStocks);
 
   const isSearchMode = !!searchTerm.trim();
   const displayStocks = isSearchMode ? stocks : stocks.slice(0, 10);
+
+  const handleSearch = async () => {
+    if (!isSearchMode) return setStocks(initialStocks);
+
+    setLoading(true);
+    try {
+      const results = await searchStocks(searchTerm.trim());
+      setStocks(results);
+    } catch (error) {
+      console.log(error);
+      setStocks([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const debouncedSearch = useDebounce(handleSearch, 300);
+
+  useEffect(() => {
+    debouncedSearch();
+  }, [searchTerm]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -37,9 +59,10 @@ const SearchCommand = ({
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
 
-  const handleSelectStock = (value: string) => {
-    console.log(value);
+  const handleSelectStock = () => {
     setOpen(false);
+    setSearchTerm("");
+    setStocks(initialStocks);
   };
 
   return (
